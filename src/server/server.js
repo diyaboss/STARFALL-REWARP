@@ -504,6 +504,21 @@ const addPlayer = (socket) => {
         map.players.removePlayerByID(currentPlayer.id);
         console.log('[INFO] User ' + currentPlayer.name + ' has disconnected');
         socket.broadcast.emit('playerDisconnect', { name: currentPlayer.name });
+    
+        if (map.players.data.length === 0) {
+            matchStartTime = null;
+            matchEnded = false;
+            finalWinner = null;
+            beaconWinner = null;
+            currentPhaseId = null;
+            nextStormAt = 0;
+            activeMatchDurationSeconds = config.matchDurationSeconds;
+            activeRespawnDelaySeconds = config.respawnDelaySeconds;
+            activeMatchMode = 'final';
+            resetBeaconIntel();
+            console.log('[INFO] All players left. Match state reset to lobby.');
+        }
+    
         emitLobbyState();
     });
 
