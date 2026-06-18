@@ -29,7 +29,7 @@ module.exports = {
     droneMassGain: 6, // drones no longer balloon players during a 35-min match
     rogueShipMassGain: 5, // drifter ships stay small/equal-size filler targets
     localDriftersPerPlayer: 6, // keep 4-6 small drifter ships around every pilot's screen
-    localDrifterRadius: 1050, // approximate visible patrol radius around each active pilot
+    localDrifterRadius: 1400, // approximate visible patrol radius around each active pilot
     shardTargetCount: 45,
     droneTargetCount: 75,
     matchDurationSeconds: 35 * 60, // final event match length
@@ -55,19 +55,19 @@ module.exports = {
         splitMass: 180,
         uniformDisposition: false,
 	},
-    gameWidth: 6500,
-    gameHeight: 6500,
+    gameWidth: 50000,
+    gameHeight: 50000,
     adminPass: process.env.ADMIN_CODE || process.env.STARFALL_ADMIN_CODE || "",
     tvPass: process.env.TV_CODE || process.env.STARFALL_TV_CODE || "",
     warpCooldownMs: 3 * 60 * 1000,
     warpDurationMs: 6500,
     warpSpeedMultiplier: 3.2,
-    farSpaceWarningPadding: 900,
+    farSpaceWarningPadding: 6000,
     testMatchDurationSeconds: 5 * 60,
     testRespawnDelaySeconds: 20,
-    gameMass: 42000,
-    maxFood: 1800,
-    maxVirus: 35,
+    gameMass: 180000,
+    maxFood: 50000,
+    maxVirus: 90,
     slowBase: 4.5,
     logChat: 0,
     networkUpdateFactor: 40,

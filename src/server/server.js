@@ -373,12 +373,18 @@ const startMatchManually = (socket, options) => {
     }
 
     if (requestedTV) {
-        // TV mode is selected from the client-side password gate. The socket query is also checked
-        // so the server cannot accidentally start a 35-minute final run from a TV-tab.
-        if (!config.tvPass || tvCode !== config.tvPass) {
-            socket.emit('serverMSG', '{ADMIN} TV mode password rejected. Main final mode remains armed.');
+        if (!config.tvPass) {
+            socket.emit('serverMSG', '{ADMIN} TV_CODE is missing on the server. Add TV_CODE in .env or Render Environment Variables.');
+            socket.emit('tvModeRejected', '{ADMIN} TV_CODE missing. Returning to final mode.');
             return;
         }
+    
+        if (tvCode !== config.tvPass) {
+            socket.emit('serverMSG', '{ADMIN} TV mode password rejected. Main final mode remains armed.');
+            socket.emit('tvModeRejected', '{ADMIN} TV mode password rejected. Returning to final mode.');
+            return;
+        }
+    
         activeMatchDurationSeconds = config.testMatchDurationSeconds || (5 * 60);
         activeRespawnDelaySeconds = config.testRespawnDelaySeconds || 20;
         activeMatchMode = 'tv';
@@ -847,7 +853,7 @@ const calculateLeaderboard = () => {
 }
 
 const ensureLocalDriftersForPlayers = () => {
-    const minLocal = Math.max(4, config.localDriftersPerPlayer || 6);
+    const minLocal = 6;
     const radius = config.localDrifterRadius || 1050;
     if (!map.players.data.length) return;
     for (const player of map.players.data) {
@@ -855,6 +861,30 @@ const ensureLocalDriftersForPlayers = () => {
         const nearby = map.food.data.filter(item => item.kind === 'rogueShip' && Math.hypot(item.x - player.x, item.y - player.y) <= radius).length;
         if (nearby < minLocal) {
             map.food.addRogueShipsNear(player.x, player.y, minLocal - nearby, config.gameWidth, config.gameHeight, config.rogueShipMassGain);
+        }
+    }
+};
+const ensureLocalStardustForPlayers = () => {
+    const minLocalStardust = 55;
+    const radius = 1250;
+    if (!map.players.data.length) return;
+
+    for (const player of map.players.data) {
+        if (!player || !player.cells || !player.cells.length) continue;
+
+        const nearby = map.food.data.filter(item =>
+            item.kind === 'stardust' &&
+            Math.hypot(item.x - player.x, item.y - player.y) <= radius
+        ).length;
+
+        if (nearby < minLocalStardust) {
+            map.food.addStorm(
+                player.x,
+                player.y,
+                minLocalStardust - nearby,
+                config.gameWidth,
+                config.gameHeight
+            );
         }
     }
 };
@@ -867,6 +897,7 @@ const gameloop = () => {
     const phaseConfig = getPhaseConfig();
 
     ensureLocalDriftersForPlayers();
+    ensureLocalStardustForPlayers();
 
     if (map.players.data.length > 0) {
         calculateLeaderboard();

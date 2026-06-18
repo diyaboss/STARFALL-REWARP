@@ -31,17 +31,33 @@ function setTVMode(enabled, code) {
     updateTVModeButton();
 }
 function getTVModePayload() {
-    var active = isTVMode();
-    return { testMode: active, mode: active ? 'tv' : 'final', tv: active ? '1' : '0', tvCode: active ? (window.sessionStorage.getItem('sf_tv_code') || '') : '' };
+    var btn = document.getElementById('tvModeButton');
+    var buttonSaysOn = btn && String(btn.innerHTML || '').toUpperCase().indexOf('TV ON') !== -1;
+    var bodyArmed = document.body.classList.contains('tv-armed');
+    var active = isTVMode() || buttonSaysOn || bodyArmed;
+
+    return {
+        testMode: active,
+        mode: active ? 'tv' : 'final',
+        tv: active ? '1' : '0',
+        tvCode: active ? (window.sessionStorage.getItem('sf_tv_code') || '') : ''
+    };
 }
 
 function updateTVModeButton() {
     var btn = document.getElementById('tvModeButton');
     if (!btn) return;
+
     var enabled = isTVMode();
     btn.innerHTML = enabled ? 'TV ON' : 'TV';
     btn.className = enabled ? 'tv-mode-button tv-active' : 'tv-mode-button';
     btn.title = enabled ? 'TV mode armed. Click to return to final mode.' : 'TV';
+
+    if (enabled) {
+        document.body.classList.add('tv-armed');
+    } else {
+        document.body.classList.remove('tv-armed');
+    }
 }
 
 function setupTVModeButton() {
