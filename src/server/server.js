@@ -865,8 +865,8 @@ const ensureLocalDriftersForPlayers = () => {
     }
 };
 const ensureLocalStardustForPlayers = () => {
-    const minLocalStardust = 55;
-    const radius = 1250;
+    const minLocalStardust = 28;
+    const radius = 950;
     if (!map.players.data.length) return;
 
     for (const player of map.players.data) {
@@ -888,6 +888,7 @@ const ensureLocalStardustForPlayers = () => {
         }
     }
 };
+let lastLocalStardustCheck = 0;
 
 const gameloop = () => {
     getMatchStatus();
@@ -897,7 +898,10 @@ const gameloop = () => {
     const phaseConfig = getPhaseConfig();
 
     ensureLocalDriftersForPlayers();
-    ensureLocalStardustForPlayers();
+    if (!lastLocalStardustCheck || Date.now() - lastLocalStardustCheck > 1800) {
+        ensureLocalStardustForPlayers();
+        lastLocalStardustCheck = Date.now();
+    }
 
     if (map.players.data.length > 0) {
         calculateLeaderboard();
