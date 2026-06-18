@@ -441,18 +441,23 @@ function updateFarSpaceWarning(x, y) {
 function updateCoordStrip(data, playerState) {
     var strip = document.getElementById('coordStrip');
     if (!strip || !playerState) return;
-    var x = Math.round(playerState.x || 0);
-    var y = Math.round(playerState.y || 0);
+    var rawX = Math.round(playerState.x || 0);
+    var rawY = Math.round(playerState.y || 0);
+
+    var x = rawX;
+    var y = Math.round(global.game.height - rawY);
     var intel = playerState.beaconIntel || null;
     updateFarSpaceWarning(x, y);
     var text = '<b>POS</b> X=' + x + ' Y=' + y;
     if (intel && intel.hasLock && intel.beacon) {
-        var dx = Math.round(intel.beacon.x - x);
-        var dy = Math.round(intel.beacon.y - y);
+        var beaconDisplayX = Math.round(intel.beacon.x);
+        var beaconDisplayY = Math.round(global.game.height - intel.beacon.y);
+
+        var dx = beaconDisplayX - x;
+        var dy = beaconDisplayY - y;
         var distance = Math.round(Math.sqrt(dx * dx + dy * dy));
         var state = intel.activationOpen ? '<span class="beacon-live">BEACON LIVE</span>' : 'Beacon opens in Phase 4';
-        text += ' • <b>BEACON</b> X=' + Math.round(intel.beacon.x) + ' Y=' + Math.round(intel.beacon.y) + ' • ΔX=' + dx + ' ΔY=' + dy + ' • DIST=' + distance + ' • ' + state;
-    } else if (intel) {
+        text += ' • <b>BEACON</b> X=' + beaconDisplayX + ' Y=' + beaconDisplayY + ' • ΔX=' + dx + ' ΔY=' + dy;    } else if (intel) {
         text += ' • <b>FRAGMENTS</b> ' + intel.knownCount + '/' + intel.requiredCount + ' • eat rivals to steal beacon coordinates';
     } else {
         text += ' • Beacon intel offline';
