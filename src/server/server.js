@@ -41,9 +41,9 @@ const PHASES = [
         startRatio: 0,
         message: 'Your core wakes in a silent sector. Drifter ships slide through the dark, coordinates are half-truths, and every rival is carrying a piece of your escape route.',
         droneTargetCount: 0,
-        rogueShipTargetCount: 45,
+        rogueShipTargetCount: 18,
         shardTargetCount: 0,
-        maxVirus: 6,
+        maxVirus: 5,
         stormEverySeconds: 0,
         stormAmount: 0
     },
@@ -54,9 +54,9 @@ const PHASES = [
         startRatio: 0.20,
         message: 'The relay lanes ignite. More salvage ships drift into range, easy fuel for anyone brave enough to chase them while the sector watches.',
         droneTargetCount: 0,
-        rogueShipTargetCount: 60,
+        rogueShipTargetCount: 24,
         shardTargetCount: 0,
-        maxVirus: 10,
+        maxVirus: 8,
         stormEverySeconds: 0,
         stormAmount: 0
     },
@@ -67,9 +67,9 @@ const PHASES = [
         startRatio: 0.45,
         message: 'Dark matter leaks through the grid. Purple shards are live, sabotage systems are awake, and the largest cores have become very expensive targets.',
         droneTargetCount: 0,
-        rogueShipTargetCount: 70,
-        shardTargetCount: 55,
-        maxVirus: 16,
+        rogueShipTargetCount: 28,
+        shardTargetCount: 18,
+        maxVirus: 12,
         stormEverySeconds: 0,
         stormAmount: 0
     },
@@ -80,11 +80,11 @@ const PHASES = [
         startRatio: 0.75,
         message: 'The beacon window tears open. Drifter traffic swarms the collapse zone, anomalies spread, and every coordinate thief has one last chance to become legend.',
         droneTargetCount: 0,
-        rogueShipTargetCount: 90,
-        shardTargetCount: 70,
-        maxVirus: 30,
-        stormEverySeconds: 18,
-        stormAmount: 70
+        rogueShipTargetCount: 34,
+        shardTargetCount: 24,
+        maxVirus: 16,
+        stormEverySeconds: 45,
+        stormAmount: 15
     }
 ];
 
@@ -255,18 +255,18 @@ const addLocalPhaseBurst = (phaseId) => {
     for (const player of map.players.data) {
         if (!player || !player.cells || player.cells.length === 0) continue;
         if (phaseId === 'drone-awakening') {
-            map.food.addRogueShipsNear(player.x, player.y, 3, config.gameWidth, config.gameHeight, config.rogueShipMassGain);
-            map.food.addStorm(player.x, player.y, 24, config.gameWidth, config.gameHeight);
+            map.food.addRogueShipsNear(player.x, player.y, 2, config.gameWidth, config.gameHeight, config.rogueShipMassGain);
+            map.food.addStorm(player.x, player.y, 10, config.gameWidth, config.gameHeight);
         }
         if (phaseId === 'dark-matter-breach') {
-            map.food.addShardsNear(player.x, player.y, 8, config.gameWidth, config.gameHeight);
-            map.food.addRogueShipsNear(player.x, player.y, 3, config.gameWidth, config.gameHeight, config.rogueShipMassGain);
-            map.food.addStorm(player.x, player.y, 38, config.gameWidth, config.gameHeight);
+            map.food.addShardsNear(player.x, player.y, 5, config.gameWidth, config.gameHeight);
+            map.food.addRogueShipsNear(player.x, player.y, 2, config.gameWidth, config.gameHeight, config.rogueShipMassGain);
+            map.food.addStorm(player.x, player.y, 12, config.gameWidth, config.gameHeight);
         }
         if (phaseId === 'singularity-collapse') {
-            map.food.addShardsNear(player.x, player.y, 6, config.gameWidth, config.gameHeight);
-            map.food.addStorm(player.x, player.y, 65, config.gameWidth, config.gameHeight);
-            map.viruses.addNear(player.x, player.y, 2, config.gameWidth, config.gameHeight);
+            map.food.addShardsNear(player.x, player.y, 4, config.gameWidth, config.gameHeight);
+            map.food.addStorm(player.x, player.y, 16, config.gameWidth, config.gameHeight);
+            map.viruses.addNear(player.x, player.y, 1, config.gameWidth, config.gameHeight);
         }
     }
 };
@@ -280,11 +280,11 @@ const announcePhaseIfNeeded = () => {
         addLocalPhaseBurst(phase.id);
         io.emit('phaseEffect', { id: phase.id, name: phase.name, chapter: phase.chapter, at: Date.now() });
         if (phase.id === 'dark-matter-breach') {
-            map.food.addShards(35);
+            map.food.addShards(12);
             io.emit('serverMSG', '{SABOTAGE} E = Dark Matter Pulse. It costs 3 shards and forces nearby rival ships to leak mass into stardust.');
         }
         if (phase.id === 'singularity-collapse') {
-            map.food.addStorm(config.gameWidth / 2, config.gameHeight / 2, 120, config.gameWidth, config.gameHeight);
+            map.food.addStorm(config.gameWidth / 2, config.gameHeight / 2, 20, config.gameWidth, config.gameHeight);
             io.emit('serverMSG', '{BEACON} Phase 4 is live. Coordinate holders can now activate the beacon. Everyone else should hunt them.');
         }
         io.emit('phaseChanged', phase);
@@ -355,10 +355,11 @@ const resetPlayersForNewMatch = () => {
 
 const startMatchManually = (socket, options) => {
     const adminCode = typeof options === 'string' ? options : (options && options.code);
-    const socketAskedForTV = !!(socket && socket.handshake && socket.handshake.query && String(socket.handshake.query.tv) === '1');
+    // TV mode must be intentionally requested by the admin-start payload only.
+    // Do not trust stale URL query params like ?tv=1, because they kept forcing confusing 35-minute/TV mismatches.
     const optionMode = options && options.mode ? String(options.mode).toLowerCase() : '';
     const optionTV = options && options.tv ? String(options.tv) === '1' : false;
-    const requestedTV = !!(options && (options.testMode === true || options.testMode === 'true')) || optionMode === 'tv' || optionTV || socketAskedForTV;
+    const requestedTV = !!(options && (options.testMode === true || options.testMode === 'true')) || optionMode === 'tv' || optionTV;
     const tvCode = options && options.tvCode;
     if (!config.adminPass) {
         socket.emit('serverMSG', '{ADMIN} Admin code is not configured on the server. Set ADMIN_CODE before deploying.');
@@ -704,6 +705,23 @@ const tickPlayer = (currentPlayer) => {
     const warpActive = Date.now() < (currentPlayer.warpBoostUntil || 0);
     currentPlayer.move(config.slowBase, config.gameWidth, config.gameHeight, INIT_MASS_LOG, warpActive ? (config.warpSpeedMultiplier || 3) : 1);
 
+    // Keep players inside the rendered sector. This restores an invisible border without
+    // the old premature edge-lock bug. Coordinates remain reachable, but nobody drifts
+    // into unrendered space and breaks navigation.
+    if (currentPlayer.cells && currentPlayer.cells.length) {
+        let sumX = 0;
+        let sumY = 0;
+        for (const cell of currentPlayer.cells) {
+            const cellRadius = util.massToRadius(cell.mass) || cell.radius || 20;
+            cell.x = Math.max(cellRadius, Math.min(config.gameWidth - cellRadius, cell.x));
+            cell.y = Math.max(cellRadius, Math.min(config.gameHeight - cellRadius, cell.y));
+            sumX += cell.x;
+            sumY += cell.y;
+        }
+        currentPlayer.x = sumX / currentPlayer.cells.length;
+        currentPlayer.y = sumY / currentPlayer.cells.length;
+    }
+
     const isEntityInsideCircle = (point, circle) => {
         return SAT.pointInCircle(new Vector(point.x, point.y), circle);
     };
@@ -853,20 +871,20 @@ const calculateLeaderboard = () => {
 }
 
 const ensureLocalDriftersForPlayers = () => {
-    const minLocal = 6;
-    const radius = config.localDrifterRadius || 1050;
+    const minLocal = 5;
+    const radius = config.localDrifterRadius || 850;
     if (!map.players.data.length) return;
     for (const player of map.players.data) {
         if (!player || !player.cells || !player.cells.length) continue;
         const nearby = map.food.data.filter(item => item.kind === 'rogueShip' && Math.hypot(item.x - player.x, item.y - player.y) <= radius).length;
         if (nearby < minLocal) {
-            map.food.addRogueShipsNear(player.x, player.y, minLocal - nearby, config.gameWidth, config.gameHeight, config.rogueShipMassGain);
+            map.food.addRogueShipsNear(player.x, player.y, Math.min(3, minLocal - nearby), config.gameWidth, config.gameHeight, config.rogueShipMassGain);
         }
     }
 };
 const ensureLocalStardustForPlayers = () => {
-    const minLocalStardust = 28;
-    const radius = 950;
+    const minLocalStardust = 18;
+    const radius = 750;
     if (!map.players.data.length) return;
 
     for (const player of map.players.data) {
@@ -888,6 +906,7 @@ const ensureLocalStardustForPlayers = () => {
         }
     }
 };
+let lastLocalDrifterCheck = 0;
 let lastLocalStardustCheck = 0;
 
 const gameloop = () => {
@@ -897,8 +916,11 @@ const gameloop = () => {
 
     const phaseConfig = getPhaseConfig();
 
-    ensureLocalDriftersForPlayers();
-    if (!lastLocalStardustCheck || Date.now() - lastLocalStardustCheck > 1800) {
+    if (!lastLocalDrifterCheck || Date.now() - lastLocalDrifterCheck > 3000) {
+        ensureLocalDriftersForPlayers();
+        lastLocalDrifterCheck = Date.now();
+    }
+    if (!lastLocalStardustCheck || Date.now() - lastLocalStardustCheck > 5000) {
         ensureLocalStardustForPlayers();
         lastLocalStardustCheck = Date.now();
     }
@@ -929,7 +951,7 @@ const gameloop = () => {
         const x = Math.random() * config.gameWidth;
         const y = Math.random() * config.gameHeight;
         map.food.addStorm(x, y, phaseConfig.stormAmount, config.gameWidth, config.gameHeight);
-        io.emit('serverMSG', '{EVENT} Stardust storm detected in the ' + phaseConfig.name + ' phase.');
+        // Storms are intentionally silent now. Chat spam was causing lag and making the event unreadable.
         nextStormAt = Date.now() + phaseConfig.stormEverySeconds * 1000;
     }
 };
